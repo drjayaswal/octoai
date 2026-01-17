@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import logo from "@/public/logo.png"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Eye, EyeOff, Mail, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import Image from "next/image";
 
 const signinSchema = z.object({
     email: z.string().min(1, "Required").email("Invalid email"),
@@ -42,52 +44,29 @@ const Signin = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
-            <div
-                className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: "url('/bg.png')" }}
-            />
-            <div className="relative rounded-[5rem] shadow-xl w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden">
-
-                <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center bg-white z-10">
-                    <img src="/logo.png" alt="Logo" className="w-16 h-16 mb-6 invert" />
+            <div className={`relative rounded-[5rem] w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden ${showForm ? "bg-transparent transition-colors duration-300" : "bg-white  shadow-xl"}`}>
+                <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center z-10">
+                    <Image src={logo} alt="Logo" className="w-16 h-16 mb-6" />
                     <h2 className="text-2xl font-bold text-slate-900">Welcome to Octo</h2>
                     <p className="text-slate-500 mt-2 mb-8 text-sm">Access your dashboard and calendar</p>
 
                     <div className="w-full space-y-3 max-w-[280px]">
                         <Button
                             onClick={() => setShowForm(true)}
-                            className="w-full py-6 rounded-3xl bg-[#c34373] hover:bg-[#c75a82] active:bg-[#ca7695] transition-transform active:scale-95"
+                            className="w-full py-6 rounded-3xl bg-[#c34373] hover:bg-[#c75b82] active:bg-[#c67593] transition-transform active:scale-95"
                         >
                             <Mail className="mr-2 h-4 w-4" /> Sign in with Email
                         </Button>
-                        <Button variant="outline" className="w-full py-5 px-10 rounded-2xl hover:bg-white border-0 shadow-none active:scale-95 hover:shadow-md">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 48 48"
-                                className="w-10 h-10"
-                            >
-                                <g>
-                                    <path
-                                        fill="#4285F4"
-                                        d="M43.611 20.083H42V20H24v8h11.303C33.973 32.084 29.373 35 24 35c-6.065 0-11-4.935-11-11s4.935-11 11-11c2.507 0 4.81.86 6.646 2.285l6.366-6.366C33.527 6.163 28.973 4 24 4 12.954 4 4 12.954 4 24s8.954 20 20 20c11.045 0 19.799-8.955 19.799-20 0-1.341-.138-2.651-.388-3.917z"
-                                    />
-                                    <path
-                                        fill="#34A853"
-                                        d="M6.306 14.691l6.571 4.819C14.655 16.104 19.001 13 24 13c2.507 0 4.81.86 6.646 2.285l6.366-6.366C33.527 6.163 28.973 4 24 4c-7.732 0-14.41 4.388-17.694 10.691z"
-                                    />
-                                    <path
-                                        fill="#FBBC05"
-                                        d="M24 44c5.311 0 10.13-1.822 13.857-4.949l-6.418-5.263C29.373 35 24 35 18.697 32.084l-6.571 5.081C9.59 39.612 16.268 44 24 44z"
-                                    />
-                                    <path
-                                        fill="#EA4335"
-                                        d="M43.611 20.083H42V20H24v8h11.303c-1.94 4.084-6.54 7-11.303 7-2.507 0-4.81-.86-6.646-2.285l-6.366 6.366C14.473 41.837 19.027 44 24 44c7.732 0 14.41-4.388 17.694-10.691z"
-                                    />
-                                </g>
-                            </svg>
+                        <Button variant="outline" className="w-full py-6 rounded-3xl border-0 hover:shadow-none shadow-none active:scale-95">
+                            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" height={20} width={20} className="mr-2" alt="G" />
                             Google
                         </Button>
                     </div>
+                    <p className="text-xs text-slate-400 mt-6">
+                        Create an account?{" "}
+                        <span className="text-[#c34373] font-semibold cursor-pointer hover:underline" onClick={() => router.push('/signup')}>Sign Up</span>
+                    </p>
+
                 </div>
 
                 <AnimatePresence>
@@ -97,19 +76,19 @@ const Signin = () => {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="absolute inset-0 md:inset-y-0 md:right-0 md:left-auto md:w-4/5 bg-[#c34373] z-20 flex flex-col justify-center p-8 md:p-12"
+                            className="absolute inset-0 bg-[#c34373] w-max-3xl z-20 flex flex-col justify-center p-8 md:p-12 rounded-l-[5rem]"
                         >
-                            <button
+                            <Button
                                 onClick={() => setShowForm(false)}
-                                className="absolute top-6 left-6 text-white/70 hover:text-white flex items-center text-sm font-semibold cursor-pointer transition-colors"
+                                className="absolute top-6 left-6 bg-transparent hover:bg-transparent text-white/70 hover:text-white flex items-center text-sm"
                             >
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                            </button>
+                            </Button>
 
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-[400px] mx-auto w-full">
                                     <div className="mb-6">
-                                        <h3 className="text-xl font-bold text-white">Login</h3>
+                                        <h3 className="text-3xl font-bold text-white">Signin</h3>
                                         <p className="text-fuchsia-100 text-sm">Enter your account details</p>
                                     </div>
 
@@ -122,10 +101,11 @@ const Signin = () => {
                                                     <Input
                                                         {...field}
                                                         placeholder="Email"
-                                                        className="bg-white/10 border-0 text-white placeholder:text-white/50 rounded-xl h-12"
+                                                        autoComplete="off"
+                                                        className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none focus-visible:shadow-xl border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors duration-300"
                                                     />
                                                 </FormControl>
-                                                <FormMessage className="text-fuchsia-200 text-xs" />
+                                                <FormMessage className="text-white animate-pulse text-xs ml-4" />
                                             </FormItem>
                                         )}
                                     />
@@ -141,7 +121,8 @@ const Signin = () => {
                                                             {...field}
                                                             type={showPassword ? "text" : "password"}
                                                             placeholder="Password"
-                                                            className="bg-white/10 border-0 text-white placeholder:text-white/50 rounded-xl h-12"
+                                                            autoComplete="off"
+                                                            className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none focus-visible:shadow-xl border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors duration-300"
                                                         />
                                                     </FormControl>
                                                     <button
@@ -152,7 +133,7 @@ const Signin = () => {
                                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                     </button>
                                                 </div>
-                                                <FormMessage className="text-fuchsia-200 text-xs" />
+                                                <FormMessage className="text-white animate-pulse text-xs ml-4" />
                                             </FormItem>
                                         )}
                                     />
@@ -164,16 +145,6 @@ const Signin = () => {
                                     >
                                         {loading ? "Verifying..." : "Sign In"}
                                     </Button>
-
-                                    <p className="text-center text-xs text-fuchsia-200 mt-4">
-                                        Don't have an account?{" "}
-                                        <span
-                                            className="underline cursor-pointer text-white"
-                                            onClick={() => router.push("/signup")}
-                                        >
-                                            Sign up
-                                        </span>
-                                    </p>
                                 </form>
                             </Form>
                         </motion.div>
