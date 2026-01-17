@@ -23,7 +23,7 @@ export default function MinimalNav() {
   const logout = async () => {
     try {
       const res = await authClient.signOut();
-      
+
       toast.success("Logging out...");
       setTimeout(() => {
         redirect("/signin");
@@ -35,35 +35,32 @@ export default function MinimalNav() {
   }
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-60 px-8 py-6 flex justify-between items-center">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-6 top-6 cursor-pointer z-70 p-3 rounded-full backdrop-blur-md bg-white/40 transition-all group"
-        >
-          <AnimatePresence mode="wait">
-            {isOpen ? (
-              <motion.div
-                key="close"
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-              >
-                <X className="w-6 h-6 text-[#c34373]" />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="menu"
-                initial={{ opacity: 0, rotate: 90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: -90 }}
-              >
-                <Menu className="w-6 h-6 text-[#c34373]" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </button>
-      </nav>
-
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="absolute right-6 top-6 cursor-pointer z-70 p-3 rounded-full backdrop-blur-md bg-white/40 transition-all group"
+      >
+        <AnimatePresence mode="wait">
+          {isOpen ? (
+            <motion.div
+              key="close"
+              initial={{ opacity: 0, rotate: -90 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={{ opacity: 0, rotate: 90 }}
+            >
+              <X className="w-6 h-6 text-[#c34373]" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="menu"
+              initial={{ opacity: 0, rotate: 90 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={{ opacity: 0, rotate: -90 }}
+            >
+              <Menu className="w-6 h-6 text-[#c34373]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </button>
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
@@ -75,7 +72,7 @@ export default function MinimalNav() {
               className="w-[95%] h-[95%] bg-black/40 backdrop-blur-2xl rounded-[3rem] shadow-2xl pointer-events-auto flex flex-col items-center justify-center relative overflow-hidden"
             >
               <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#c34373]/20 blur-[120px]" />
-              { _session &&
+              {_session &&
                 <Button onClick={logout} className="absolute top-7 right-7 rounded-4xl bg-transparent hover:bg-white/10 text-white active:text-red-600 scale-200"><Power /></Button>
               }
               <ul className="flex flex-col items-center gap-6 justify-center mx-auto z-10">

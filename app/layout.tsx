@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import MinimalNav from "@/components/ui/navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,12 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#c34373]  select-none`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#c34373]  select-none`} suppressHydrationWarning suppressContentEditableWarning
       >
         <div
-          className="fixed  inset-0 z-0 bg-cover bg-center"
+          className="fixed  inset-0 -z-10 bg-cover bg-center"
           style={{ backgroundImage: "url('/bg.png')" }}
         />
+        <MinimalNav/>
         {children}
           <Toaster />
       </body>
