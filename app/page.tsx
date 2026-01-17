@@ -1,0 +1,167 @@
+"use client";
+
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import logo from "@/public/logo.png"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Eye, EyeOff, Mail, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import Image from "next/image";
+
+const signinSchema = z.object({
+  email: z.string().min(1, "Required").email("Invalid email"),
+  password: z.string().min(6, "Min 6 characters"),
+});
+
+const Signin = () => {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const form = useForm<z.infer<typeof signinSchema>>({
+    resolver: zodResolver(signinSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = async (values: z.infer<typeof signinSchema>) => {
+    setLoading(true);
+    const { error } = await authClient.signIn.email({
+      email: values.email,
+      password: values.password,
+      callbackURL: "/dashboard",
+    });
+    setLoading(false);
+    if (error) toast.error(error.message);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bg.png')" }}
+      />
+      <div className="relative rounded-[5rem] shadow-xl w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center bg-white z-10">
+          <Image src={logo} alt="Logo" className="w-16 h-16 mb-6" />
+          <h2 className="text-2xl font-bold text-slate-900">Welcome to Octo</h2>
+          <p className="text-slate-500 mt-2 mb-8 text-sm">Access your dashboard and calendar</p>
+
+          <div className="w-full space-y-3 max-w-[280px]">
+            <Button
+              onClick={() => setShowForm(true)}
+              className="w-full py-6 rounded-3xl bg-[#c34373] hover:bg-[#c75b82] active:bg-[#c67593] transition-transform active:scale-95"
+            >
+              <Mail className="mr-2 h-4 w-4" /> Sign in with Email
+            </Button>
+            <Button variant="outline" className="w-full py-6 rounded-3xl border-0 hover:shadow-none shadow-none active:scale-95">
+              <Image src="https://www.svgrepo.com/show/475656/google-color.svg" height={20} width={20} className="mr-2" alt="G" />
+              Google
+            </Button>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute inset-0 md:inset-y-0 md:right-0 md:left-auto md:w-17/20 bg-[#c34373] z-20 flex flex-col justify-center p-8 md:p-12"
+            >
+              <Button
+                onClick={() => setShowForm(false)}
+                className="absolute top-6 left-6 bg-transparent hover:bg-transparent text-white/70 hover:text-white flex items-center text-sm"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              </Button>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-white">Login</h3>
+                    <p className="text-fuchsia-100 text-sm">Enter your account details</p>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Email"
+                            autoComplete="off"
+                            className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none focus-visible:shadow-xl border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors duration-300"
+                            />
+                        </FormControl>
+                        <FormMessage className="text-white animate-pulse text-xs ml-4" />
+                      </FormItem>
+                    )}
+                    />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Password"
+                              autoComplete="off"
+                              className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none focus-visible:shadow-xl border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors duration-300"
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-3 text-white/50"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        <FormMessage className="text-white animate-pulse text-xs ml-4" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-white text-[#c34373] hover:bg-fuchsia-50 rounded-xl h-12 font-bold mt-4"
+                  >
+                    {loading ? "Verifying..." : "Sign In"}
+                  </Button>
+
+                  <p className="text-center text-xs text-white/70 mt-4">
+                    Don't have an account?{" "}
+                    <span
+                      className="cursor-pointer text-white"
+                      onClick={() => router.push("/signup")}
+                    >
+                      Sign up
+                    </span>
+                  </p>
+                </form>
+              </Form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default Signin;
