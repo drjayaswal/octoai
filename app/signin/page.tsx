@@ -15,7 +15,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
-import { session } from "@/auth-schema";
 
 const signinSchema = z.object({
     email: z.string().min(1, "Required").email("Invalid email"),
@@ -24,9 +23,6 @@ const signinSchema = z.object({
 
 const Signin = () => {
     const { data: _session, isPending } = authClient.useSession();
-    if (isPending) return <Spinner />
-    if (session) redirect("/")
-
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +31,6 @@ const Signin = () => {
         resolver: zodResolver(signinSchema),
         defaultValues: { email: "", password: "" },
     });
-
     const onSubmit = async (values: z.infer<typeof signinSchema>) => {
         setLoading(true);
         const { error } = await authClient.signIn.email({
@@ -51,6 +46,8 @@ const Signin = () => {
         }
     };
 
+    if (isPending) return <Spinner />
+    if (_session) redirect("/")
     return (
         <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
             <div className={`relative rounded-[5rem] w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden ${showForm ? "bg-transparent transition-colors duration-300" : "bg-white  shadow-xl"}`}>
