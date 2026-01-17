@@ -2,20 +2,21 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logo from "@/public/logo.png"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Eye, EyeOff, Mail, ArrowRight, ArrowLeft } from "lucide-react"; // Changed ArrowLeft to ArrowRight
+import { Eye, EyeOff, Mail, ArrowLeft, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
+import { Spinner } from "@/components/ui/spinner";
+import { session } from "@/auth-schema";
 
-// Updated schema to include confirmation
 const signupSchema = z.object({
     email: z.string().min(1, "Required").email("Invalid email"),
     password: z.string().min(6, "Min 6 characters"),
@@ -26,11 +27,14 @@ const signupSchema = z.object({
 });
 
 const Signup = () => {
+    const { data: _session, isPending } = authClient.useSession();
+    if (isPending) return <Spinner />
+    if (session) redirect("/")
+
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showForm, setShowForm] = useState(false);
-
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
         defaultValues: { email: "", password: "", confirmPassword: "" },
@@ -41,25 +45,21 @@ const Signup = () => {
         const { error } = await authClient.signUp.email({
             email: values.email,
             password: values.password,
-            name: values.email.split('@')[0], // Default name from email
-            callbackURL: "/dashboard",
+            name: values.email.split('@')[0],
         });
         setLoading(false);
         if (error) {
             toast.error(error.message);
         } else {
             toast.success("Account created! Redirecting...");
+            redirect("/")
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
-            <div
-                className="absolute inset-0 z-0 bg-cover bg-center"
-                style={{ backgroundImage: "url('/bg.png')" }}
-            />
             <div className={`relative rounded-[5rem] w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden ${showForm ? "bg-transparent transition-colors duration-300" : "bg-white  shadow-xl"}`}>
-                
+
                 <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center z-10">
                     <Image src={logo} alt="Logo" className="w-16 h-16 mb-6" />
                     <h2 className="text-2xl font-bold text-slate-900">Join Octo Today</h2>
@@ -77,7 +77,7 @@ const Signup = () => {
                             Google
                         </Button>
                     </div>
-                    
+
                     <p className="text-xs text-slate-400 mt-6">
                         Already have an account?{" "}
                         <span className="text-[#c34373] font-semibold cursor-pointer hover:underline" onClick={() => router.push('/signin')}>Signin</span>
@@ -97,7 +97,7 @@ const Signup = () => {
                                 onClick={() => setShowForm(false)}
                                 className="absolute top-6 right-6 bg-transparent hover:bg-transparent text-white/70 hover:text-white flex items-center text-sm"
                             >
-                                <ArrowLeft className="ml-2 h-4 w-4" /> Back 
+                                <ArrowLeft className="ml-2 h-4 w-4" /> Back
                             </Button>
 
                             <Form {...form}>
@@ -115,6 +115,7 @@ const Signup = () => {
                                                 <FormControl>
                                                     <Input
                                                         {...field}
+                                                        autoComplete="off"
                                                         placeholder="Email Address"
                                                         className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors"
                                                     />
@@ -135,6 +136,7 @@ const Signup = () => {
                                                             {...field}
                                                             type={showPassword ? "text" : "password"}
                                                             placeholder="Password"
+                                                            autoComplete="off"
                                                             className="focus-visible:bg-white/10 placeholder:pl-1 shadow-none border-0 focus-visible:ring-0 text-white placeholder:text-white/70 rounded-2xl h-12 transition-colors"
                                                         />
                                                     </FormControl>
@@ -174,7 +176,7 @@ const Signup = () => {
                                         disabled={loading}
                                         className="w-full bg-white text-[#c34373] hover:bg-fuchsia-50 rounded-xl h-12 font-bold mt-4 shadow-lg active:scale-95 transition-all"
                                     >
-                                        {loading ? "Creating Account..." : "Create Account"}
+                                        {loading ? <><Loader className="animate-spin" />Creating Account...</> : "Create Account"}
                                     </Button>
                                 </form>
                             </Form>

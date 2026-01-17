@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logo from "@/public/logo.png"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Eye, EyeOff, Mail, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, ArrowLeft, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
+import { Spinner } from "@/components/ui/spinner";
+import { session } from "@/auth-schema";
 
 const signinSchema = z.object({
     email: z.string().min(1, "Required").email("Invalid email"),
@@ -21,11 +23,14 @@ const signinSchema = z.object({
 });
 
 const Signin = () => {
+    const { data: _session, isPending } = authClient.useSession();
+    if (isPending) return <Spinner />
+    if (session) redirect("/")
+
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showForm, setShowForm] = useState(false);
-
     const form = useForm<z.infer<typeof signinSchema>>({
         resolver: zodResolver(signinSchema),
         defaultValues: { email: "", password: "" },
@@ -36,10 +41,14 @@ const Signin = () => {
         const { error } = await authClient.signIn.email({
             email: values.email,
             password: values.password,
-            callbackURL: "/dashboard",
         });
         setLoading(false);
-        if (error) toast.error(error.message);
+        if (error) {
+            toast.error(error.message)
+        } else {
+            toast.success("Signing In...");
+            redirect("/")
+        }
     };
 
     return (
@@ -143,7 +152,7 @@ const Signin = () => {
                                         disabled={loading}
                                         className="w-full bg-white text-[#c34373] hover:bg-fuchsia-50 rounded-xl h-12 font-bold mt-4"
                                     >
-                                        {loading ? "Verifying..." : "Sign In"}
+                                        {loading ? <><Loader className="animate-spin" />Signing in...</> : "Sign In"}
                                     </Button>
                                 </form>
                             </Form>
