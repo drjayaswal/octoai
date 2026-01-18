@@ -47,7 +47,7 @@ update: protectedProcedure.input(updateAgentSchema).mutation(async ({ ctx, input
     }
     return removeAgent
   }),
-  getMany: protectedProcedure
+getMany: protectedProcedure
     .input(
       z.object({
         page: z.number().default(DEFAULT_PAGE),
@@ -55,32 +55,41 @@ update: protectedProcedure.input(updateAgentSchema).mutation(async ({ ctx, input
           .number()
           .min(MIN_PAGE_SIZE)
           .max(MAX_PAGE_SIZE)
-          .default(DEFAULT_PAGE_SIZE),
+          .default(DEFAULT_PAGE_SIZE)
+          .optional(), // Made optional
         search: z.string().nullish(),
+        all: z.boolean().optional(), // Added a flag to bypass pagination
       })
     )
     .query(async ({ ctx, input }) => {
-      const { search, pageSize, page } = input;
+      const { search, pageSize, page, all } = input;
 
       const whereClause = and(
         eq(agent.userId, ctx.auth.user.id),
         search ? ilike(agent.name, `%${search}%`) : undefined
       );
 
-      const data = await db
+      // 1. Build the base query
+      let query = db
         .select()
         .from(agent)
         .where(whereClause)
-        .orderBy(desc(agent.createdAt), desc(agent.id))
-        .limit(pageSize)
-        .offset((page - 1) * pageSize);
+        .orderBy(desc(agent.createdAt), desc(agent.id));
+
+      // 2. Only apply limit/offset if 'all' is not true
+      if (!all && pageSize) {
+        query = query.limit(pageSize).offset((page - 1) * pageSize) as any;
+      }
+
+      const data = await query;
 
       const [{ count: total }] = await db
         .select({ count: count() })
         .from(agent)
         .where(whereClause);
 
-      const totalPages = Math.ceil(Number(total) / pageSize);
+      const effectivePageSize = all ? Number(total) : (pageSize ?? DEFAULT_PAGE_SIZE);
+      const totalPages = Math.ceil(Number(total) / (effectivePageSize || 1));
 
       return {
         items: data,
