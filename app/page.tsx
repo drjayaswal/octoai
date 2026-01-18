@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { images } from "@/lib/constants";
 import { authClient } from "@/lib/auth-client";
 import { Video } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 const HomePage = () => {
   const { data: _session } = authClient.useSession();
   const router = useRouter();
+  if(!_session)return <Spinner/>
 
   return (
     <div className="min-h-screen w-full flex flex-col">

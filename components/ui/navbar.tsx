@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Power } from "lucide-react";
+import { Menu, X, ArrowRight, Power, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./button";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
@@ -18,30 +18,55 @@ const menuItems = [
 
 export default function MinimalNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const router = useRouter();
   const { data: _session, isPending } = authClient.useSession();
   const logout = async () => {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            toast.success("Logging out...");
-            setTimeout(() => {
-              setIsOpen((prev)=>!prev)
-              redirect("/signin")
-            }, 1000);
-          },
-          onError: (error) => {
-            console.log(error);
-            toast.success("Can't Log out");
-          }
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Logging out...");
+          setTimeout(() => {
+            setIsOpen((prev) => !prev)
+            redirect("/signin")
+          }, 1000);
+        },
+        onError: (error) => {
+          console.log(error);
+          toast.success("Can't Log out");
         }
-      });
+      }
+    });
   }
   return (
     <>
+    <div className="flex">
+            <div className="fixed left-6 top-6 z-70 flex items-center">
+        <motion.div
+          initial={false}
+          animate={{ width: isSearchOpen ? "215px" : "0px", opacity: isSearchOpen ? 1 : 0 }}
+          className="overflow-hidden bg-white/20 backdrop-blur-xl rounded-full mr-2"
+        >
+          <input
+            type="text"
+            placeholder="Search Meeting & Agents"
+            className="bg-transparent border-none outline-none px-4 py-2 text-white placeholder:text-white w-full"
+          />
+        </motion.div>
+        <button
+          onClick={() => setIsSearchOpen(!isSearchOpen)}
+          className=" cursor-pointer p-3 rounded-full backdrop-blur-md bg-white/40 transition-all hover:bg-white/60"
+        >
+          <Search className="w-6 h-6 text-[#c34373]" />
+        </button>
+      </div>
+
+    
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="absolute right-6 top-6 cursor-pointer z-70 p-3 rounded-full backdrop-blur-md bg-white/40 transition-all group"
       >
+        
         <AnimatePresence mode="wait">
           {isOpen ? (
             <motion.div
@@ -113,6 +138,7 @@ export default function MinimalNav() {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </>
   );
 }
