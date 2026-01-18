@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, MoreVertical, ArrowRight, Skull, Loader2, Calendar, Trash2, Edit2, Video, Tag } from "lucide-react";
+import { Plus, MoreVertical, ArrowRight, Loader2, Calendar, Trash2, Edit2, Video, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
