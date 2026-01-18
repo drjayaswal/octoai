@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import type { Metadata } from "next";
+import { TRPCReactProvider } from "@/trpc/client";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import MinimalNav from "@/components/ui/navbar";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <TRPCReactProvider>
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#c34373]  select-none`} suppressHydrationWarning suppressContentEditableWarning
@@ -48,6 +50,7 @@ export default function RootLayout({
           <Toaster />
       </body>
     </html>
+    </TRPCReactProvider>
   );
 }
 
