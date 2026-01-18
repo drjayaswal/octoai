@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "@/public/logo.png"
+import logo from "@/public/logo.png";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Eye, EyeOff, Mail, ArrowLeft, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,13 +25,26 @@ const signinSchema = z.object({
 const Signin = () => {
     const { data: _session, isPending } = authClient.useSession();
     const router = useRouter();
+    const [mounted, setMounted] = useState(false); // Hydration Guard
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showForm, setShowForm] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (mounted && _session) {
+            router.push("/");
+        }
+    }, [mounted, _session, router]);
+
     const form = useForm<z.infer<typeof signinSchema>>({
         resolver: zodResolver(signinSchema),
         defaultValues: { email: "", password: "" },
     });
+
     const onSubmit = async (values: z.infer<typeof signinSchema>) => {
         setLoading(true);
         const { error } = await authClient.signIn.email({
@@ -40,15 +53,15 @@ const Signin = () => {
         });
         setLoading(false);
         if (error) {
-            toast.error(error.message)
+            toast.error(error.message);
         } else {
             toast.success("Signing In...");
-            redirect("/")
+            router.push("/");
         }
     };
+    if (!mounted || isPending) return <Spinner />;
+    if (_session) return null;
 
-    if (isPending) return <Spinner />
-    if (_session) redirect("/")
     return (
         <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
             <div className={`relative rounded-[5rem] w-full max-w-[400px] md:max-w-[650px] min-h-[550px] flex flex-col md:flex-row overflow-hidden ${showForm ? "bg-transparent transition-colors duration-300" : "bg-white  shadow-xl"}`}>

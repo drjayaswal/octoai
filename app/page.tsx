@@ -1,21 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { images } from "@/lib/constants";
 import { authClient } from "@/lib/auth-client";
 import { Video } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
 
 const HomePage = () => {
   const { data: _session } = authClient.useSession();
-  const trpc = useTRPC();
-  const { data } = useQuery(trpc.hello.queryOptions({ text: _session?.user.name || "User" }));
-
   const router = useRouter();
   if (!_session) return <Spinner />
 
@@ -29,29 +24,7 @@ const HomePage = () => {
           transition={{ duration: 0.6 }}
           className="space-y-6 lg:mt-0 md:mt-20 mt-25 md:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start"
         >
-          <AnimatePresence>
-            {_session?.user && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="fixed top-22 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
-              >
-                <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/55 backdrop-blur-md shadow-2xl">
-                  <div className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 border border-white/80 bg-[#c34373]"></span>
-                  </div>
 
-                  <p className="text-[#c34373] font-medium tracking-wide flex items-center gap-2">
-                    <span className="text-sm md:text-base whitespace-nowrap">
-                      {data?.greeting}
-                    </span>
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
           <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tighter">
             <span className="text-5xl sm:text-7xl text-transparent bg-clip-text bg-linear-to-r from-white to-white/20">meet</span> Smarter <br />
             Manage <span className="text-5xl sm:text-7xl text-transparent bg-clip-text bg-linear-to-l from-white to-white/20">more</span>
