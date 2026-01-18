@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, MoreVertical, ArrowRight, Skull, Loader2, Star, Dices } from "lucide-react";
+import { Plus, MoreVertical, ArrowRight, Skull, Loader2, Star, Dices, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDateTime } from "@/lib/utils";
 import { AiAvatar } from "@/components/ui/ai-avatar";
 import Link from "next/link";
@@ -25,6 +26,7 @@ export default function AgentsPage() {
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [randomSuggestion, setRandomSuggestion] = useState("");
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -45,15 +47,46 @@ export default function AgentsPage() {
         trpc.agents.create.mutationOptions({
             onSuccess: async () => {
                 await queryClient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
-                toast.success("Agent identity secured");
-                form.reset();
-                setOpen(false);
+                toast.success("Agent Created");
+                handleClose();
             },
-            onError: (error) => {
-                toast.error(error.message);
-            },
+            onError: (error) => toast.error(error.message),
         })
     );
+
+    const updateAgent = useMutation(
+        trpc.agents.update.mutationOptions({
+            onSuccess: async () => {
+                await queryClient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
+                toast.success("Agent Updated");
+                handleClose();
+            },
+            onError: (error) => toast.error(error.message),
+        })
+    );
+
+    const removeAgent = useMutation(
+        trpc.agents.remove.mutationOptions({
+            onSuccess: async () => {
+                await queryClient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
+                toast.success("Agent Deleted");
+            },
+            onError: (error) => toast.error(error.message),
+        })
+    );
+
+    const handleClose = () => {
+        setOpen(false);
+        setEditingId(null);
+        form.reset({ name: "", instructions: "" });
+    };
+
+    const onEdit = (agent: any) => {
+        form.setValue("name", agent.name);
+        form.setValue("instructions", agent.instructions);
+        setEditingId(agent.id);
+        setOpen(true);
+    };
 
     const handleRandomize = () => {
         const randomName = nameSuggestions[Math.floor(Math.random() * nameSuggestions.length)];
@@ -62,7 +95,15 @@ export default function AgentsPage() {
     };
 
     const onSubmit = (values: z.infer<typeof createAgentSchema>) => {
-        createAgent.mutate(values);
+        if (editingId) {
+            updateAgent.mutate({ 
+                id: editingId, 
+                name: values.name, 
+                instructions: values.instructions 
+            });
+        } else {
+            createAgent.mutate(values);
+        }
     };
 
     const currentNameInput = form.watch("name");
@@ -70,19 +111,26 @@ export default function AgentsPage() {
     if (!mounted) return null;
 
     return (
-        <div className="max-w-4xl mx-auto lg:mt-0 md:mt-20 mt-22 pt-8 pb-4 border-dashed border-l-0 sm:border-l-8 border-[#c34373] px-6 sm:px-10 selection:bg-rose-100 bg-white min-h-screen">
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+        /* UI FIX: Added flex flex-col and h-screen here to lock the outer height */
+        <div className="max-w-4xl mx-auto lg:mt-0 md:mt-20 mt-22 pt-8 pb-4 border-dashed border-l-0 sm:border-l-8 border-[#c34373] px-6 sm:px-10 selection:bg-rose-100 bg-white h-screen flex flex-col overflow-hidden">
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 shrink-0">
                 <div className="space-y-1">
                     <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">AI Agents</h1>
                     <p className="text-slate-500 text-sm">Manage and deploy your custom AI personalities</p>
                 </div>
 
                 <Dialog open={open} onOpenChange={(v) => {
-                    setOpen(v);
-                    if (!v) form.reset();
+                    if (!v) handleClose();
+                    else setOpen(true);
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="rounded-2xl bg-[#c34373] hover:bg-[#cf698f] text-white gap-2 px-6 h-11 transition-all hover:shadow-lg">
+                        <Button 
+                            onClick={() => {
+                                setEditingId(null);
+                                form.reset({ name: "", instructions: "" });
+                            }}
+                            className="rounded-2xl bg-[#c34373] hover:bg-[#cf698f] text-white gap-2 px-6 h-11 transition-all hover:shadow-lg"
+                        >
                             <Plus className="w-4 h-4" />
                             Create
                         </Button>
@@ -101,10 +149,10 @@ export default function AgentsPage() {
                             </div>
                             <div className="space-y-1">
                                 <DialogTitle className="text-center text-2xl font-bold text-slate-900">
-                                    {currentNameInput || randomSuggestion || "New Agent"}
+                                    {editingId ? "Edit Agent" : (currentNameInput || randomSuggestion || "New Agent")}
                                 </DialogTitle>
                                 <DialogDescription className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400">
-                                    Personality Check
+                                    {editingId ? "Recalibrating Core" : "Personality Check"}
                                 </DialogDescription>
                             </div>
                         </DialogHeader>
@@ -155,12 +203,12 @@ export default function AgentsPage() {
                                 <div className="flex flex-col gap-2 pt-2">
                                     <Button
                                         type="submit"
-                                        disabled={createAgent.isPending}
+                                        disabled={createAgent.isPending || updateAgent.isPending}
                                         className="w-full rounded-2xl bg-[#c34373] hover:bg-[#cf698f] h-12 text-white font-bold transition-all shadow-md active:scale-95"
                                     >
-                                        {createAgent.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : `Save Identity`}
+                                        { (createAgent.isPending || updateAgent.isPending) ? <Loader2 className="w-5 h-5 animate-spin" /> : editingId ? "Update Identity" : "Save Identity"}
                                     </Button>
-                                    <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600 rounded-xl h-10">
+                                    <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-400 hover:text-slate-600 rounded-xl h-10">
                                         Cancel
                                     </Button>
                                 </div>
@@ -170,66 +218,88 @@ export default function AgentsPage() {
                 </Dialog>
             </header>
 
-            {data?.items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 opacity-50">
-                    <Skull className="w-12 h-12 text-slate-200 mb-4" />
-                    <p className="text-slate-500 font-medium">No agents found</p>
-                </div>
-            ) : (
-                <div className="flex flex-col gap-3">
-                    {data?.items.map((agent) => (
-                        <div
-                            key={agent.id}
-                            className="group flex items-center gap-4 p-3 rounded-[1.8rem] bg-white hover:shadow-sm transition-all duration-200"
-                        >
-                            <AiAvatar
-                                seed={agent.name}
-                                variant="botttsNeutral"
-                                classname="w-10 h-10 rounded-2xl shrink-0"
-                            />
+            {/* UI FIX: Added overflow-y-auto and flex-1 to the container below */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {data?.items.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 opacity-50">
+                        <Skull className="w-12 h-12 text-slate-200 mb-4" />
+                        <p className="text-slate-500 font-medium">No agents found</p>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-3 pb-6">
+                        {data?.items.map((agent) => (
+                            <div
+                                key={agent.id}
+                                className="group flex items-center gap-4 p-3 rounded-[1.8rem] bg-white hover:shadow-sm transition-all duration-200"
+                            >
+                                <AiAvatar
+                                    seed={agent.name}
+                                    variant="botttsNeutral"
+                                    classname="w-10 h-10 rounded-2xl shrink-0"
+                                />
 
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#c34373] transition-colors">
-                                        {agent.name}
-                                    </h3>
-                                    <span className="text-[9px] font-mono text-slate-300 uppercase hidden sm:inline">
-                                        {agent.id}
-                                    </span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#c34373] transition-colors">
+                                            {agent.name}
+                                        </h3>
+                                        <span className="text-[9px] font-mono text-slate-300 uppercase hidden sm:inline">
+                                            {agent.id}
+                                        </span>
+                                    </div>
+                                    <p className="text-[12px] text-slate-400 line-clamp-1 italic truncate">
+                                        {agent.instructions}
+                                    </p>
                                 </div>
-                                <p className="text-[12px] text-slate-400 line-clamp-1 italic truncate">
-                                    {agent.instructions}
-                                </p>
-                            </div>
 
-                            <div className="flex items-center gap-4 shrink-0">
-                                <div className="hidden md:flex flex-col items-end">
-                                    <span className="text-[8px] font-bold uppercase text-slate-300 tracking-tighter">Modified</span>
-                                    <span className="text-[10px] font-medium text-slate-500 tabular-nums">
-                                        {formatDateTime(new Date(), 'date') === formatDateTime(agent.updatedAt, 'date')
-                                            ? formatDateTime(agent.updatedAt, 'time')
-                                            : formatDateTime(agent.updatedAt, 'date')}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Link href={`/agents/${agent.id}`}>
-                                        <Button
-                                            variant="ghost"
-                                            className="h-8 px-3 hover:bg-rose-50 hover:text-[#c34373] rounded-lg text-slate-500 text-xs font-semibold group/btn"
-                                        >
-                                            View
-                                            <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover/btn:translate-x-0.5 transition-transform" />
-                                        </Button>
-                                    </Link>
-                                    <Button variant="ghost" className="h-8 w-8 p-0 text-slate-300 hover:text-[#c34373] rounded-full">
-                                        <MoreVertical className="w-4 h-4" />
-                                    </Button>
+                                <div className="flex items-center gap-4 shrink-0">
+                                    <div className="hidden md:flex flex-col items-end">
+                                        <span className="text-[8px] font-bold uppercase text-slate-300 tracking-tighter">Modified</span>
+                                        <span className="text-[10px] font-medium text-slate-500 tabular-nums">
+                                            {formatDateTime(agent.updatedAt, 'date')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Link href={`/agents/${agent.id}`}>
+                                            <Button
+                                                variant="ghost"
+                                                className="h-8 px-3 hover:bg-rose-50 hover:text-[#c34373] rounded-lg text-slate-500 text-xs font-semibold group/btn"
+                                            >
+                                                View
+                                                <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover/btn:translate-x-0.5 transition-transform" />
+                                            </Button>
+                                        </Link>
+                                        
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0 text-slate-300 hover:text-[#c34373] rounded-full">
+                                                    <MoreVertical className="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-slate-100">
+                                                <DropdownMenuItem 
+                                                    onClick={() => onEdit(agent)}
+                                                    className="rounded-xl gap-2 cursor-pointer text-slate-600 focus:text-slate-700 focus:bg-gray-50"
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                    onClick={() => {
+                                                        removeAgent.mutate({ id: agent.id })
+                                                    }}
+                                                    className="rounded-xl gap-2 cursor-pointer text-rose-500 focus:text-rose-600 focus:bg-rose-50"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5 text-rose-400" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

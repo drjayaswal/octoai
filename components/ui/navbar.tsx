@@ -40,7 +40,7 @@ export default function MinimalNav() {
           }, 1000);
         },
         onError: (error) => {
-          console.log(error);
+          // console.log(error);
           toast.success("Can't Log out");
         }
       }

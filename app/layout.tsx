@@ -4,6 +4,7 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import MinimalNav from "@/components/ui/navbar";
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+      <NuqsAdapter>
     <TRPCReactProvider>
     <html lang="en">
       <body
@@ -47,10 +49,11 @@ export default function RootLayout({
         />
         <MinimalNav/>
         {children}
-          <Toaster position="bottom-center" />
+          <Toaster position="bottom-right" />
       </body>
     </html>
     </TRPCReactProvider>
+        </NuqsAdapter>
   );
 }
 
