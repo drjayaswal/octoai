@@ -10,28 +10,31 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
 const menuItems = [
-  { name: "Product", href: "#" },
-  { name: "Solutions", href: "#" },
-  { name: "Enterprise", href: "#" },
-  { name: "Pricing", href: "#" },
-  { name: "Careers", href: "#" },
+  { name: "Meetings", href: "/meetings" },
+  { name: "Agents", href: "/agents" },
+  { name: "Upgrade", href: "/upgrade" },
+  { name: "Settings", href: "/settings" },
 ];
 
 export default function MinimalNav() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: _session, isPending } = authClient.useSession();
   const logout = async () => {
-    try {
-      const res = await authClient.signOut();
-
-      toast.success("Logging out...");
-      setTimeout(() => {
-        redirect("/signin");
-      }, 1000);
-    } catch (e) {
-      console.log(e);
-
-    }
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Logging out...");
+            setTimeout(() => {
+              setIsOpen((prev)=>!prev)
+              redirect("/signin")
+            }, 1000);
+          },
+          onError: (error) => {
+            console.log(error);
+            toast.success("Can't Log out");
+          }
+        }
+      });
   }
   return (
     <>

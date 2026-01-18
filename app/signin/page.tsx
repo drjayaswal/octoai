@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
+import { githubLogin } from "@/lib/services";
 
 const signinSchema = z.object({
     email: z.string().min(1, "Required").email("Invalid email"),
@@ -45,18 +46,6 @@ const Signin = () => {
             redirect("/")
         }
     };
-    const githubLogin = async() =>{
-        try{
-            const res = await authClient.signIn.social({
-                provider: "github"
-            })
-            console.log(res);
-            return
-        }catch(e){
-            console.log(e);
-            
-        }
-    }
 
     if (isPending) return <Spinner />
     if (_session) redirect("/")

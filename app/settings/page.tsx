@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { User as UserIcon, Bot, Shield, Trash2, Camera, Save, Loader2, CheckCircle2, ChevronRight, Loader } from "lucide-react";
+import { User as UserIcon, Camera, Save, CheckCircle2, Loader, Pen, Laptop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { formatDateTime, parseUserAgent } from "@/lib/utils";
 
 export default function SettingsPage() {
     const { data: session, isPending } = authClient.useSession();
@@ -21,100 +21,121 @@ export default function SettingsPage() {
     );
 
     const user = session?.user;
+    const deviceName = parseUserAgent(session?.session.userAgent || "Nil");
 
     return (
-        <div className="max-w-2xl mx-auto py-16 px-6 selection:bg-rose-100 bg-white">
-            {/* Header */}
-            <header className="flex items-center justify-between gap-4 mb-12">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Settings</h1>
-                    <p className="text-slate-500 text-sm">Manage your identity and AI preferences.</p>
-                </div>
-                {user?.emailVerified && (
-                    <div className="inline-flex items-center gap-1 px-3 text-indigo-500 text-[11px] font-bold uppercase tracking-wider">
-                        <CheckCircle2 className="w-5 fill-indigo-500 h-5 text-white" /> Verified
+        <div className="max-w-2xl mx-auto pt-8 pb-4 border-dashed border-l-0 sm:border-l-8 border-[#c34373] px-6 sm:px-10 selection:bg-rose-100 bg-white min-h-[600px] flex flex-col justify-between rounded-r-[3rem]">
+            <div>
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">Settings</h1>
+                        <p className="text-slate-500 text-sm">Manage your identity and AI preferences.</p>
                     </div>
-                )}
-            </header>
+                    {user?.emailVerified && (
+                        <div className="inline-flex items-center w-fit gap-1.5 px-3 py-1 text-indigo-500 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 sm:bg-transparent">
+                            <CheckCircle2 className="w-4 h-4 fill-indigo-500 text-white" /> Verified
+                        </div>
+                    )}
+                </header>
 
-            <div className="space-y-16">
-                {/* --- PROFILE SECTION --- */}
-                <section className="space-y-8">
-                    <div className="flex items-center gap-6 group">
+                <div className="space-y-8">
+                    <section className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
                         <div className="relative">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm transition-all group-hover:border-slate-300">
+                            <div className="w-20 h-20 flex items-center justify-center overflow-hidden transition-all border border-slate-100 rounded-full">
                                 {user?.image ? (
-                                    <Image src={user.image} alt={user.name} fill className="rounded-full object-cover" />
+                                    <Image src={user.image} alt={user.name || "User"} fill className="object-cover hover:scale-105 rounded-full duration-200 transition-all" />
                                 ) : (
                                     <UserIcon className="w-8 h-8 text-slate-300" />
                                 )}
                             </div>
-                            <button className="cursor-pointer absolute bottom-0 right-0 p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition-transform text-slate-600" onClick={()=>{
-                                toast.info("feature coming soon...")
-                            }}>
+                            <button className="cursor-pointer absolute -bottom-1 -right-1 p-2 bg-white rounded-xl shadow-md border border-slate-100 hover:scale-105 transition-transform text-slate-600" onClick={() => toast.info("Coming soon")}>
                                 <Camera className="w-3.5 h-3.5" />
                             </button>
                         </div>
                         <div className="space-y-1">
                             <p className="text-xl font-semibold text-slate-900">{user?.name}</p>
-                            <p className="text-xs font-mono uppercase text-slate-400">{user?.id.slice(0, 12)}</p>
+                            <p className="text-xs font-mono uppercase text-slate-400 break-all">{user?.id.slice(0, 12).concat("XXXXXXXX")}</p>
                         </div>
-                    </div>
+                    </section>
 
-                    <div className="grid gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Display Name</label>
+                    <div className="grid gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] flex items-center gap-1 font-bold uppercase text-slate-400 ml-1 tracking-widest">
+                                <Pen className="w-3 h-3" /> Username
+                            </label>
                             <Input
-                                placeholder="Your Name"
-                                className="h-12 rounded-xl border-slate-200 bg-slate-50/30 focus:bg-white transition-all focus:ring-0 focus:border-slate-900"
-                                defaultValue={user?.name}
+                                placeholder="Enter New Username"
+                                className="h-12 rounded-2xl placeholder:text-slate-300 focus-visible:ring-0 border-0 bg-slate-50/30 focus-visible:shadow-md focus:bg-white shadow-none transition-all focus:ring-0 focus:border-slate-900"
+                                defaultValue={user?.name || ""}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-slate-400 ml-1">Email Address</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] flex items-center gap-1 font-bold uppercase text-slate-400 ml-1 tracking-widest">
+                                <CheckCircle2 className="w-3 h-3 text-slate-400" /> Email Address
+                            </label>
                             <Input
                                 disabled
-                                className="h-12 rounded-xl bg-gray-100 border-0 text-slate-400 italic cursor-not-allowed"
-                                defaultValue={user?.email}
+                                className="h-11 rounded-xl border-none bg-slate-50/50 text-slate-400 italic cursor-not-allowed"
+                                defaultValue={user?.email || ""}
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] flex items-center gap-1 font-bold uppercase text-slate-400 ml-1 tracking-widest">
+                                <Laptop className="w-3 h-3" /> Device Information
+                            </label>
+                            <Input
+                                disabled
+                                className="h-11 rounded-xl border-none bg-slate-50/50 text-slate-400 italic font-medium cursor-not-allowed truncate"
+                                value={deviceName}
                             />
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <hr className="border-slate-300" />
+                <div className="group my-8 flex items-center justify-start p-1 rounded-2xl bg-white transition-all cursor-default">
+                    <Button
+                        disabled={saving}
+                        onClick={() => {
+                            setSaving(true);
+                            setTimeout(() => {
+                                setSaving(false)
+                                toast.success("Account Updated")
+                            }, 2000);
+                        }}
+                        className={`w-full sm:w-auto hover:bg-emerald-500 bg-white text-emerald-500 border border-emerald-100 sm:border-none rounded-3xl px-8 h-12 font-semibold transition-all hover:text-white disabled:opacity-70 ${!saving && "hover:shadow-md"}`}
+                    >
+                        {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        Save
+                    </Button>
+                </div>
+            </div>
 
-                {/* --- SECURITY & DANGER ZONE --- */}
-                <section className="space-y-4">
-                    <div className="group flex items-center justify-between p-5 rounded-2xl bg-white transition-all cursor-default">
-                        <div className="flex items-center gap-4">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <div className="flex gap-2 items-center">
-                                <p className="text-sm font-semibold">Active Session</p>
-                                <p className="text-[11px] text-slate-400 font-mono tracking-tight">{session?.session.ipAddress || '127.0.0.1'}</p>
-                            </div>
+            <footer className="border-t p-4 border-slate-100 pt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="space-y-1">
+                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Member Since</p>
+                    <p className="text-xs text-slate-600 font-semibold">{formatDateTime(user?.createdAt, 'date')}</p>
+                </div>
+
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:gap-6">
+                    <div className="text-left sm:text-right space-y-1">
+                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Active Since</p>
+                        <div className="flex items-center sm:justify-end gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full animate-pulse bg-amber-500" />
+                            <p className="text-xs text-slate-500 font-medium tabular-nums">{formatDateTime(session?.session?.updatedAt, 'time')}</p>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-300 uppercase">Current Device</span>
                     </div>
-                </section>
-            </div>
-
-            {/* Floating Action Bar */}
-            <div className="sticky bottom-5 flex justify-end">
-                <Button
-                    disabled={saving}
-                    onClick={() => {
-                        setSaving(true);
-                        setTimeout(() => {
-                            setSaving(false)
-                            toast.success("Account Updated")
-                        }, 2000);
-                    }}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-3xl px-8 h-12 font-semibold shadow-xl transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-70"
-                >
-                    {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save
-                </Button>
-            </div>
+                    <div className="w-px h-6 bg-slate-100 hidden sm:block" />
+                    <div className="text-right space-y-1">
+                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Updated</p>
+                            <p className="text-xs text-slate-500 font-medium tabular-nums">
+                                {formatDateTime(new Date(), 'date') === formatDateTime(user?.updatedAt, 'date')
+                                    ? formatDateTime(user?.updatedAt, 'time')
+                                    : formatDateTime(user?.updatedAt, 'date')
+                                }
+                        </p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
