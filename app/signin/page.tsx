@@ -25,7 +25,7 @@ const signinSchema = z.object({
 const Signin = () => {
     const { data: _session, isPending } = authClient.useSession();
     const router = useRouter();
-    const [mounted, setMounted] = useState(false); // Hydration Guard
+    const [mounted, setMounted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -60,7 +60,6 @@ const Signin = () => {
         }
     };
     if (!mounted || isPending) return <Spinner />;
-    if (_session) return null;
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">

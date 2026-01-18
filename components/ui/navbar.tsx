@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight, Power, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./button";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
@@ -19,8 +19,15 @@ const menuItems = [
 export default function MinimalNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { data: _session, isPending } = authClient.useSession();
+  
+  const { data: _session } = authClient.useSession();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const logout = async () => {
     await authClient.signOut({
       fetchOptions: {
@@ -29,7 +36,7 @@ export default function MinimalNav() {
           setTimeout(() => {
             setIsOpen((prev) => !prev)
             toast.success("Logged out");
-            redirect("/signin")
+            router.push("/signin")
           }, 1000);
         },
         onError: (error) => {
@@ -39,11 +46,11 @@ export default function MinimalNav() {
       }
     });
   }
+
   return (
     <>
       <div className="flex">
-        {
-          _session &&
+        {mounted && _session && (
           <div className="fixed left-6 top-6 z-70 flex items-center">
             <motion.div
               initial={false}
@@ -63,14 +70,12 @@ export default function MinimalNav() {
               <Search className="w-6 h-6 text-[#c34373]" />
             </button>
           </div>
-        }
-
+        )}
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-6 top-6 cursor-pointer z-70 p-3 rounded-full backdrop-blur-md bg-white/40 transition-all group"
+          className="fixed right-6 top-6 cursor-pointer z-70 p-3 rounded-full backdrop-blur-md bg-white/40 transition-all group"
         >
-
           <AnimatePresence mode="wait">
             {isOpen ? (
               <motion.div
@@ -93,6 +98,7 @@ export default function MinimalNav() {
             )}
           </AnimatePresence>
         </button>
+
         <AnimatePresence>
           {isOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
@@ -104,9 +110,13 @@ export default function MinimalNav() {
                 className="w-[95%] h-[95%] bg-black/40 backdrop-blur-2xl rounded-[3rem] shadow-2xl pointer-events-auto flex flex-col items-center justify-center relative overflow-hidden"
               >
                 <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#c34373]/20 blur-[120px]" />
-                {_session &&
-                  <Button onClick={logout} className="absolute top-7 right-7 rounded-4xl bg-transparent hover:bg-white/10 text-white active:text-red-600 scale-200"><Power /></Button>
-                }
+                
+                {mounted && _session && (
+                  <Button onClick={logout} className="absolute top-7 right-7 rounded-4xl bg-transparent hover:bg-white/10 text-white active:text-red-600 scale-200">
+                    <Power />
+                  </Button>
+                )}
+
                 <ul className="flex flex-col items-center gap-6 justify-center mx-auto z-10">
                   {menuItems.map((item, idx) => (
                     <motion.li

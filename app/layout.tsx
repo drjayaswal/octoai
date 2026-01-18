@@ -47,7 +47,7 @@ export default function RootLayout({
         />
         <MinimalNav/>
         {children}
-          <Toaster />
+          <Toaster position="bottom-center" />
       </body>
     </html>
     </TRPCReactProvider>

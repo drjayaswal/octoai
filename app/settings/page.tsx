@@ -24,10 +24,10 @@ export default function SettingsPage() {
     const deviceName = parseUserAgent(session?.session.userAgent || "Nil");
 
     return (
-        <div className="max-w-2xl mx-auto pt-8 pb-4 border-dashed border-l-0 sm:border-l-8 border-[#c34373] px-6 sm:px-10 selection:bg-rose-100 bg-white min-h-[600px] flex flex-col justify-between rounded-r-[3rem]">
+        <div className="max-w-2xl mx-auto mt-20 p-10 selection:bg-rose-100 bg-white min-h-[600px] flex flex-col justify-between rounded-r-[3re]">
             <div>
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                    <div className="space-y-1">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-300">
+                    <div className="">
                         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">Settings</h1>
                         <p className="text-slate-500 text-sm">Manage your identity and AI preferences.</p>
                     </div>
@@ -102,7 +102,7 @@ export default function SettingsPage() {
                                 toast.success("Account Updated")
                             }, 2000);
                         }}
-                        className={`w-full sm:w-auto hover:bg-emerald-500 bg-white text-emerald-500 border border-emerald-100 sm:border-none rounded-3xl px-8 h-12 font-semibold transition-all hover:text-white disabled:opacity-70 ${!saving && "hover:shadow-md"}`}
+                        className={`w-full sm:w-auto hover:bg-emerald-500 sm:bg-white text-white bg-emerald-500 sm:text-emerald-500 rounded-3xl px-8 h-12 font-semibold transition-all hover:text-white disabled:opacity-70 ${!saving && "hover:shadow-md"}`}
                     >
                         {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         Save
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <footer className="border-t p-4 border-slate-100 pt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <footer className="border-t p-4 py-8 border-slate-100 pt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="space-y-1">
                     <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Member Since</p>
                     <p className="text-xs text-slate-600 font-semibold">{formatDateTime(user?.createdAt, 'date')}</p>

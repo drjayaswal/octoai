@@ -1,5 +1,5 @@
 'use client';
-// ^-- to make sure we can mount the Provider from a server component
+
 import "dotenv/config"
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
