@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { nameSuggestions } from "@/lib/constants";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createAgentSchema } from "../schema";
+import { createAgentSchema } from "../../app/agents/server/schema";
 import { z } from "zod";
 import { Spinner } from "@/components/ui/spinner";
 

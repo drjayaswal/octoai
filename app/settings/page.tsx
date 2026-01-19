@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
-import SettingsPage from "./components/view";
+import SettingsPage from "../../components/sub-components/SettingsPage";
 
 export default function Page() {
     const { data: _session, isPending } = authClient.useSession();

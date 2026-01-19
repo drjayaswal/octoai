@@ -30,8 +30,8 @@ import {
   Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import MeetingNotFound from "./meeting-not-found";
-import { CustomCallControls } from "./meeting-call-view";
+import MeetingNotFound from "../../../../components/sub-components/MeetingNotFound";
+import { CustomCallControls } from "../../../../components/sub-components/MeetingCallPage";
 
 const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
 

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import MeetingsPage from "./components/view";
+import MeetingsPage from "../../components/sub-components/MeetingsPage";
 import { authClient } from "@/lib/auth-client";
 
 export default function Page() {
