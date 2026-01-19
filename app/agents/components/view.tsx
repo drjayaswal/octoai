@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, MoreVertical, ArrowRight, Skull, Loader2, Star, Dices, Trash2, Edit2 } from "lucide-react";
+import { Plus, MoreVertical, ArrowRight, Skull, Star, Dices, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAgentSchema } from "../schema";
 import { z } from "zod";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AgentsPage() {
     const trpc = useTRPC();
@@ -206,7 +207,7 @@ export default function AgentsPage() {
                                         disabled={createAgent.isPending || updateAgent.isPending}
                                         className="w-full rounded-2xl bg-[#c34373] hover:bg-[#cf698f] h-12 text-white font-bold transition-all shadow-md active:scale-95"
                                     >
-                                        { (createAgent.isPending || updateAgent.isPending) ? <Loader2 className="w-5 h-5 animate-spin" /> : editingId ? "Update Identity" : "Save Identity"}
+                                        { (createAgent.isPending || updateAgent.isPending) ? <Spinner className="w-5 h-5 animate-spin" /> : editingId ? "Update Identity" : "Save Identity"}
                                     </Button>
                                     <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-400 hover:text-slate-600 rounded-xl h-10">
                                         Cancel

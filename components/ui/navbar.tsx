@@ -51,7 +51,7 @@ export default function MinimalNav() {
     <>
       <div className="flex">
         {mounted && _session && (
-          <div className="fixed left-6 top-6 z-70 flex items-center">
+          <div className="fixed left-4 top-6 z-70 flex items-center">
             <motion.div
               initial={false}
               animate={{ width: isSearchOpen ? "215px" : "0px", opacity: isSearchOpen ? 1 : 0 }}

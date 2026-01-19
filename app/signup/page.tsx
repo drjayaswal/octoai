@@ -60,7 +60,7 @@ const Signup = () => {
         if (error) {
             toast.error(error.message);
         } else {
-            toast.success("Account created! Redirecting...");
+            toast.success("Account created");
             router.push("/");
         }
     };

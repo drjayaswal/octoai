@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, MoreVertical, ArrowRight, Loader2, Calendar, Trash2, Edit2, Video, Tag } from "lucide-react";
+import { Plus, MoreVertical, ArrowRight, Calendar, Trash2, Edit2, Video, Tag, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -201,7 +201,7 @@ export default function MeetingsPage() {
                     disabled={createMeeting.isPending || updateMeeting.isPending}
                     className="w-full rounded-2xl bg-[#c34373] hover:bg-[#cf698f] h-12 text-white font-bold transition-all"
                   >
-                    {(createMeeting.isPending || updateMeeting.isPending) ? <Loader2 className="w-5 h-5 animate-spin" /> : editingId ? "Update Meeting" : "Create Meeting"}
+                    {(createMeeting.isPending || updateMeeting.isPending) ? <Loader className="w-5 h-5 animate-spin" /> : editingId ? "Update Meeting" : "Create Meeting"}
                   </Button>
                   <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-400 rounded-xl h-10">Cancel</Button>
                 </div>
@@ -253,7 +253,7 @@ export default function MeetingsPage() {
                   <div className="flex items-center gap-1">
                     <Link href={`/meetings/${m.id}`}>
                       <Button variant="ghost" className="h-8 px-3 hover:bg-rose-50 hover:text-[#c34373] rounded-lg text-slate-500 text-xs font-semibold group/btn">
-                        Join
+                        Lobby
                         <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover/btn:translate-x-0.5 transition-transform" />
                       </Button>
                     </Link>
@@ -266,13 +266,13 @@ export default function MeetingsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-slate-100">
                         <DropdownMenuItem onClick={() => onEdit(m)} className="rounded-xl gap-2 cursor-pointer text-slate-600 focus:text-slate-700 focus:bg-gray-50">
-                          <Edit2 className="w-3.5 h-3.5" /> Edit Details
+                          <Edit2 className="w-3.5 h-3.5" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => removeMeeting.mutate({ id: m.id })}
                           className="rounded-xl gap-2 cursor-pointer text-rose-500 focus:text-rose-600 focus:bg-rose-50"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> Cancel Meeting
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400"/> Cancel
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
