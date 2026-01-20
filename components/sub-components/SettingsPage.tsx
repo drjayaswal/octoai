@@ -127,11 +127,11 @@ export default function SettingsPage() {
                     <div className="w-px h-6 bg-slate-100 hidden sm:block" />
                     <div className="text-right space-y-1">
                         <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Updated</p>
-                            <p className="text-xs text-slate-500 font-medium tabular-nums">
-                                {formatDateTime(new Date(), 'date') === formatDateTime(user?.updatedAt, 'date')
-                                    ? formatDateTime(user?.updatedAt, 'time')
-                                    : formatDateTime(user?.updatedAt, 'date')
-                                }
+                        <p className="text-xs text-slate-500 font-medium tabular-nums">
+                            {formatDateTime(new Date(), 'date') === formatDateTime(user?.updatedAt, 'date')
+                                ? formatDateTime(user?.updatedAt, 'time')
+                                : formatDateTime(user?.updatedAt, 'date')
+                            }
                         </p>
                     </div>
                 </div>

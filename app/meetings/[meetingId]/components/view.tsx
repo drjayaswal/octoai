@@ -1,12 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { authClient } from "@/lib/auth-client";
 import { formatDateTime } from "@/lib/utils";
-
 import {
   StreamVideoClient,
   StreamCall,
@@ -18,7 +17,6 @@ import {
   SpeakerLayout,
 } from "@stream-io/video-react-sdk";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
-
 import {
   Video as VideoIcon,
   Mic,
@@ -27,27 +25,14 @@ import {
   Loader,
   Lock,
   Timer,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import MeetingNotFound from "../../../../components/sub-components/MeetingNotFound";
-import { CustomCallControls } from "../../../../components/sub-components/MeetingCallPage";
+import { toast } from "sonner";
+import { MeetingData } from "@/app/meetings/types";
+import MeetingNotFound from "@/components/sub-components/MeetingNotFound";
 
 const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
-
-export type MeetingData = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  agentId: string;
-  status: "upcoming" | "active" | "completed" | "processing" | "cancelled";
-  startedAt: string | null;
-  endedAt: string | null;
-  transcriptUrl: string | null;
-  recordingUrl: string | null;
-  summary: string | null;
-};
 
 const MeetingPage = () => {
   const { meetingId } = useParams();
@@ -108,18 +93,61 @@ const MeetingPage = () => {
 };
 
 const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
-  const [isJoining, setIsJoining] = useState(false);
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+  const updateStatus = useMutation(trpc.meetings.update.mutationOptions());
+  const updateMeetingStatus = (newStatus: MeetingData["status"]) => {
+    if (meeting.status === newStatus) return;
 
-  // Using SDK hooks to get the actual state of hardware
+    updateStatus.mutate({
+      id: meeting.id,
+      status: newStatus,
+    }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.meetings.getOne.queryOptions({ id: meeting.id }));
+      }
+    });
+  };
+
+  const [isJoining, setIsJoining] = useState(false);
+  const router = useRouter();
   const { useParticipantCount, useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
   const participantCount = useParticipantCount();
   const callingState = useCallCallingState();
   const call = useCall();
-
-  // Corrected property names: 'isMute' for mic and 'isEnabled' for camera
   const { microphone, isMute: isMicMuted } = useMicrophoneState();
   const { camera, isEnabled: isCamEnabled } = useCameraState();
   const isCamOff = !isCamEnabled;
+
+  useEffect(() => {
+    if (!call) return;
+
+    const syncStatus = async () => {
+      if (callingState === CallingState.JOINED && meeting.status === "upcoming") {
+        updateMeetingStatus("active");
+      }
+      if (callingState === CallingState.LEFT) {
+        updateMeetingStatus("completed");
+      }
+    };
+
+    syncStatus();
+  }, [callingState, meeting.status]);
+
+  useEffect(() => {
+    if (!call) return;
+
+    const handleParticipantLeft = () => {
+      if (participantCount <= 1 && meeting.status === "active") {
+        handleLeave();
+      }
+    };
+
+    call.on("call.session_participant_left", handleParticipantLeft);
+    return () => {
+      call.off("call.session_participant_left", handleParticipantLeft);
+    };
+  }, [call, participantCount]);
 
   const toggleMic = async () => {
     await call?.microphone.toggle();
@@ -131,13 +159,36 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
 
   const handleJoin = async () => {
     if (isJoining) return;
+
+    if (meeting.status === "completed" || meeting.endedAt) {
+      toast.error("This meeting has already ended.");
+      router.push("/meetings");
+      return;
+    }
+
+    if (meeting.status === "cancelled") {
+      toast.error("This meeting has been cancelled.");
+      router.push("/meetings");
+      return;
+    }
+
     setIsJoining(true);
     try {
       await call?.join();
+      if (meeting.status === "upcoming") {
+        updateMeetingStatus("active");
+      }
     } catch (e) {
       console.error("Join error:", e);
       setIsJoining(false);
     }
+  };
+
+  const handleLeave = async () => {
+    await call?.leave();
+    updateMeetingStatus("completed");
+    toast.success("Meeting Ended")
+    router.push(`/meetings/${meeting.id}/review`);
   };
 
   if (callingState !== CallingState.JOINED) {
@@ -148,9 +199,7 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
             <div className="relative aspect-video rounded-[4rem] overflow-hidden shadow-2xl">
 
               {isCamOff ? (
-                <div className="w-full h-full flex items-center justify-center bg-white/10">
-                  {/* <VideoOff className="w-10 h-10 md:w-6 md:h-6 text-white/80" /> */}
-                </div>
+                <div className="w-full h-full flex items-center justify-center bg-white/10" />
               ) : (
                 <div className="relative h-full w-full overflow-hidden rounded-lg">
                   <div className="absolute inset-0 blur-xs scale-105 pointer-events-none">
@@ -230,14 +279,49 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </div>
-            {participantCount < 2 ?  "Alone" : participantCount + " People"}
+            {participantCount < 2 ? "Alone" : participantCount + " People"}
           </div>
         </div>
         <div className="flex-1 w-full relative">
           <SpeakerLayout participantsBarPosition="top" />
         </div>
         <div className="relative pb-safe mb-4 md:mb-0">
-          <CustomCallControls meetingId={meeting.id} />
+          <div className="absolute bottom-6 md:bottom-10 left-0 right-0 flex justify-center z-50 px-4">
+            <div className="flex items-center gap-3 md:gap-4 bg-white/20 backdrop-blur-3xl p-2.5 md:p-3 px-5 md:px-6 rounded-[24px] md:rounded-[32px] shadow-2xl max-w-full">
+              <Button
+                variant="outline"
+                size="icon"
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isMicMuted
+                  ? "bg-amber-500/70 text-white hover:bg-amber-500"
+                  : "bg-white/10 text-white hover:bg-white hover:text-black"
+                  }`}
+                onClick={() => microphone.toggle()}
+              >
+                {isMicMuted ? <MicOff className="w-5 h-5 md:w-6 md:h-6" /> : <Mic className="w-5 h-5 md:w-6 md:h-6" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isCamOff
+                  ? "bg-green-500/70 text-white hover:bg-green-500"
+                  : "bg-white/10 text-white hover:bg-white hover:text-black"
+                  }`}
+                onClick={() => camera.toggle()}
+              >
+                {isCamOff ? <VideoOff className="w-5 h-5 md:w-6 md:h-6" /> : <VideoIcon className="w-5 h-5 md:w-6 md:h-6" />}
+              </Button>
+
+              <div className="w-px h-6 md:h-8 bg-white mx-1 md:mx-2" />
+
+              <button
+                onClick={handleLeave}
+                className="cursor-pointer w-12 h-12 md:w-14 md:h-14 rounded-4xl bg-red-600 text-white flex items-center justify-center hover:bg-red-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-500/20"
+                title="Leave Call"
+              >
+                <Phone size={22} className="md:w-6 md:h-6" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

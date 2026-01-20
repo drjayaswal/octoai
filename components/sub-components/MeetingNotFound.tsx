@@ -8,14 +8,12 @@ import { MoveLeft, CalendarX, VideoOff, Clock, Search, Calendar } from "lucide-r
 export default function MeetingNotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 overflow-hidden">
-      {/* Background Glows */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#c34373]/20 blur-[120px] rounded-full" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
       </div>
 
       <div className="relative z-10 text-center max-w-2xl">
-        {/* Animated Icon Section */}
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -25,8 +23,6 @@ export default function MeetingNotFound() {
           <div className="relative z-10 p-4 rounded-3xl ">
             <CalendarX className="w-20 h-20 text-white" />
           </div>
-          
-          {/* Floating decorative icons */}
           {[VideoOff, Clock, Search, Calendar].map((Icon, i) => (
             <motion.div
               key={i}
@@ -50,8 +46,6 @@ export default function MeetingNotFound() {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Text Content */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -68,8 +62,6 @@ export default function MeetingNotFound() {
             ID may have been deleted or is incorrect
           </p>
         </motion.div>
-
-        {/* Action Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,23 +1,11 @@
 import { db } from "@/db";
 import { meeting, agent } from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { streamVideo } from "@/lib/stream-video";
 import { generateAvatarUri } from "@/components/ui/generate-avatar-uri";
-
-export const createMeetingSchema = z.object({
-  name: z.string().min(1, "Meeting name is required"),
-  agentId: z.string().min(1, "An agent must be selected"),
-});
-
-export const updateMeetingSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1).optional(),
-  status: z.enum(["upcoming", "active", "completed", "processing", "cancelled"]).optional(),
-  summary: z.string().optional(),
-});
+import { createMeetingSchema, meetingIdSchema, updateMeetingSchema } from "../schema";
 
 export const meetingRouter = createTRPCRouter({
   generateToken: protectedProcedure.mutation(async ({ ctx }) => {
@@ -41,7 +29,6 @@ export const meetingRouter = createTRPCRouter({
 
     return token
   }),
-  // Get all meetings for the user (No Pagination)
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return await db
       .select({
@@ -49,18 +36,17 @@ export const meetingRouter = createTRPCRouter({
         name: meeting.name,
         status: meeting.status,
         createdAt: meeting.createdAt,
+        endedAt: meeting.endedAt,
         agentId: meeting.agentId,
-        agentName: agent.name, // Joined from agent table
+        agentName: agent.name,
       })
       .from(meeting)
       .leftJoin(agent, eq(meeting.agentId, agent.id))
       .where(eq(meeting.userId, ctx.auth.user.id))
       .orderBy(desc(meeting.createdAt));
   }),
-
-  // Get a single meeting's full details
   getOne: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(meetingIdSchema)
     .query(async ({ ctx, input }) => {
       const [existingMeeting] = await db
         .select()
@@ -77,8 +63,6 @@ export const meetingRouter = createTRPCRouter({
       }
       return existingMeeting;
     }),
-
-  // Create a new meeting
   create: protectedProcedure
     .input(createMeetingSchema)
     .mutation(async ({ input, ctx }) => {
@@ -128,8 +112,6 @@ export const meetingRouter = createTRPCRouter({
       ])
       return createdMeeting;
     }),
-
-  // Update meeting (Status, Summary, Name)
   update: protectedProcedure
     .input(updateMeetingSchema)
     .mutation(async ({ ctx, input }) => {
@@ -137,7 +119,12 @@ export const meetingRouter = createTRPCRouter({
 
       const [updatedMeeting] = await db
         .update(meeting)
-        .set({ ...updateData, updatedAt: new Date() })
+        .set({
+          ...updateData,
+          ...(updateData.status === "active" ? { startedAt: new Date() } : {}),
+          ...(updateData.status === "completed" ? { endedAt: new Date() } : {}),
+          updatedAt: new Date(),
+        })
         .where(
           and(
             eq(meeting.id, id),
@@ -151,10 +138,8 @@ export const meetingRouter = createTRPCRouter({
       }
       return updatedMeeting;
     }),
-
-  // Delete a meeting
   remove: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(meetingIdSchema)
     .mutation(async ({ ctx, input }) => {
       const [removedMeeting] = await db
         .delete(meeting)

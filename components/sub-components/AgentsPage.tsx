@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, MoreVertical, ArrowRight, Skull, Star, Dices, Trash2, Edit2 } from "lucide-react";
+import { Plus, MoreVertical, ArrowRight, Skull, Star, Dices, Trash2, Edit2, Loader, ArrowUpFromDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDateTime } from "@/lib/utils";
 import { AiAvatar } from "@/components/ui/ai-avatar";
-import Link from "next/link";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { toast } from "sonner";
@@ -19,10 +18,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAgentSchema } from "../../app/agents/server/schema";
 import { z } from "zod";
-import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
 
 export default function AgentsPage() {
     const trpc = useTRPC();
+    const router = useRouter()
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -97,10 +97,10 @@ export default function AgentsPage() {
 
     const onSubmit = (values: z.infer<typeof createAgentSchema>) => {
         if (editingId) {
-            updateAgent.mutate({ 
-                id: editingId, 
-                name: values.name, 
-                instructions: values.instructions 
+            updateAgent.mutate({
+                id: editingId,
+                name: values.name,
+                instructions: values.instructions
             });
         } else {
             createAgent.mutate(values);
@@ -112,7 +112,6 @@ export default function AgentsPage() {
     if (!mounted) return null;
 
     return (
-        /* UI FIX: Added flex flex-col and h-screen here to lock the outer height */
         <div className="max-w-4xl mx-auto lg:mt-0 md:mt-20 mt-22 pt-8 pb-4 border-dashed border-l-0 sm:border-l-8 border-[#c34373] px-6 sm:px-10 selection:bg-rose-100 bg-white h-screen flex flex-col overflow-hidden">
             <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 shrink-0">
                 <div className="space-y-1">
@@ -124,18 +123,27 @@ export default function AgentsPage() {
                     if (!v) handleClose();
                     else setOpen(true);
                 }}>
-                    <DialogTrigger asChild>
-                        <Button 
-                            onClick={() => {
-                                setEditingId(null);
-                                form.reset({ name: "", instructions: "" });
-                            }}
+                    <div className="flex gap-2 items-center">
+                        <DialogTrigger asChild>
+                            <Button
+                                onClick={() => {
+                                    setEditingId(null);
+                                    form.reset({ name: "", instructions: "" });
+                                }}
+                                className="rounded-2xl bg-[#c34373] hover:bg-[#cf698f] text-white gap-2 px-6 h-11 transition-all hover:shadow-lg"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Create
+                            </Button>
+                        </DialogTrigger>
+                        <Button
+                            onClick={() => { router.push("/meetings") }}
                             className="rounded-2xl bg-[#c34373] hover:bg-[#cf698f] text-white gap-2 px-6 h-11 transition-all hover:shadow-lg"
                         >
-                            <Plus className="w-4 h-4" />
-                            Create
+                            <ArrowUpFromDot className="w-4 h-4" />
+                            Meets
                         </Button>
-                    </DialogTrigger>
+                    </div>
                     <DialogContent className="sm:max-w-[400px] rounded-[2.5rem] p-8 border-none shadow-2xl overflow-hidden">
                         <DialogHeader className="items-center text-center">
                             <div className="relative mb-4 group cursor-pointer" onClick={handleRandomize}>
@@ -201,25 +209,38 @@ export default function AgentsPage() {
                                     )}
                                 />
 
-                                <div className="flex flex-col gap-2 pt-2">
+                                <div className="flex flex-col gap-3 pt-4">
                                     <Button
                                         type="submit"
                                         disabled={createAgent.isPending || updateAgent.isPending}
-                                        className="w-full rounded-2xl bg-[#c34373] hover:bg-[#cf698f] h-12 text-white font-bold transition-all shadow-md active:scale-95"
+                                        className="w-full rounded-2xl bg-[#c34373] hover:bg-[#cf698f] h-12 text-white font-bold transition-all shadow-md active:scale-95 disabled:opacity-70"
                                     >
-                                        { (createAgent.isPending || updateAgent.isPending) ? <Spinner className="w-5 h-5 animate-spin" /> : editingId ? "Update Identity" : "Save Identity"}
+                                        {createAgent.isPending || updateAgent.isPending ? (
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Loader className="w-5 h-5 animate-spin" />
+                                                <span>{editingId ? "Updating..." : "Creating..."}</span>
+                                            </div>
+                                        ) : (
+                                            editingId ? "Update Agent" : "Create Agent"
+                                        )}
                                     </Button>
-                                    <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-400 hover:text-slate-600 rounded-xl h-10">
+
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={handleClose}
+                                        disabled={createAgent.isPending || updateAgent.isPending}
+                                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl h-10 transition-colors"
+                                    >
                                         Cancel
                                     </Button>
                                 </div>
                             </form>
                         </Form>
                     </DialogContent>
+
                 </Dialog>
             </header>
-
-            {/* UI FIX: Added overflow-y-auto and flex-1 to the container below */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {data?.items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 opacity-50">
@@ -261,16 +282,6 @@ export default function AgentsPage() {
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Link href={`/agents/${agent.id}`}>
-                                            <Button
-                                                variant="ghost"
-                                                className="h-8 px-3 hover:bg-rose-50 hover:text-[#c34373] rounded-lg text-slate-500 text-xs font-semibold group/btn"
-                                            >
-                                                View
-                                                <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover/btn:translate-x-0.5 transition-transform" />
-                                            </Button>
-                                        </Link>
-                                        
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0 text-slate-300 hover:text-[#c34373] rounded-full">
@@ -278,13 +289,13 @@ export default function AgentsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-slate-100">
-                                                <DropdownMenuItem 
+                                                <DropdownMenuItem
                                                     onClick={() => onEdit(agent)}
                                                     className="rounded-xl gap-2 cursor-pointer text-slate-600 focus:text-slate-700 focus:bg-gray-50"
                                                 >
                                                     <Edit2 className="w-3.5 h-3.5" /> Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem 
+                                                <DropdownMenuItem
                                                     onClick={() => {
                                                         removeAgent.mutate({ id: agent.id })
                                                     }}
@@ -300,7 +311,9 @@ export default function AgentsPage() {
                         ))}
                     </div>
                 )}
+
             </div>
+
         </div>
     );
 }

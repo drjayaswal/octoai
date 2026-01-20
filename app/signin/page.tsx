@@ -16,11 +16,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import { githubLogin } from "@/lib/services";
-
-const signinSchema = z.object({
-    email: z.string().min(1, "Required").email("Invalid email"),
-    password: z.string().min(6, "Min 6 characters"),
-});
+import { signinSchema } from "./schema";
 
 const Signin = () => {
     const { data: _session, isPending } = authClient.useSession();
@@ -33,7 +29,6 @@ const Signin = () => {
     useEffect(() => {
         setMounted(true);
     }, []);
-
     useEffect(() => {
         if (mounted && _session) {
             router.push("/");
@@ -44,7 +39,6 @@ const Signin = () => {
         resolver: zodResolver(signinSchema),
         defaultValues: { email: "", password: "" },
     });
-
     const onSubmit = async (values: z.infer<typeof signinSchema>) => {
         setLoading(true);
         const { error } = await authClient.signIn.email({
@@ -59,6 +53,7 @@ const Signin = () => {
             router.push("/");
         }
     };
+
     if (!mounted || isPending) return <Spinner />;
 
     return (
@@ -80,8 +75,8 @@ const Signin = () => {
                             <Image src="https://www.svgrepo.com/show/475656/google-color.svg" height={20} width={20} className="mr-2" alt="G" />
                             Google
                         </Button>
-                        <Button variant="outline" className="w-full py-6 rounded-3xl border-0 hover:shadow-none shadow-none active:scale-95" 
-                        onClick={githubLogin}>
+                        <Button variant="outline" className="w-full py-6 rounded-3xl border-0 hover:shadow-none shadow-none active:scale-95"
+                            onClick={githubLogin}>
                             <svg
                                 viewBox="0 0 24 24"
                                 height={20}
