@@ -27,7 +27,6 @@ import {
   Loader,
   Lock,
   Timer,
-  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MeetingNotFound from "../../../../components/sub-components/MeetingNotFound";
@@ -110,22 +109,24 @@ const MeetingPage = () => {
 
 const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
   const [isJoining, setIsJoining] = useState(false);
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  const [isCamOff, setIsCamOff] = useState(false);
 
-  const { useParticipantCount, useCallCallingState } = useCallStateHooks();
+  // Using SDK hooks to get the actual state of hardware
+  const { useParticipantCount, useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
   const participantCount = useParticipantCount();
   const callingState = useCallCallingState();
   const call = useCall();
 
+  // Corrected property names: 'isMute' for mic and 'isEnabled' for camera
+  const { microphone, isMute: isMicMuted } = useMicrophoneState();
+  const { camera, isEnabled: isCamEnabled } = useCameraState();
+  const isCamOff = !isCamEnabled;
+
   const toggleMic = async () => {
     await call?.microphone.toggle();
-    setIsMicMuted((prev) => !prev);
   };
 
   const toggleCam = async () => {
     await call?.camera.toggle();
-    setIsCamOff((prev) => !prev);
   };
 
   const handleJoin = async () => {
@@ -148,12 +149,11 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
 
               {isCamOff ? (
                 <div className="w-full h-full flex items-center justify-center bg-white/10">
-                  <VideoOff className="w-10 h-10 md:w-6 md:h-6 text-white/80" />
+                  {/* <VideoOff className="w-10 h-10 md:w-6 md:h-6 text-white/80" /> */}
                 </div>
               ) : (
                 <div className="relative h-full w-full overflow-hidden rounded-lg">
-                  {/* Aspect Ratio container for VideoPreview */}
-                  <div className="absolute inset-0 blur-sm scale-105 pointer-events-none">
+                  <div className="absolute inset-0 blur-xs scale-105 pointer-events-none">
                     <VideoPreview />
                   </div>
                 </div>
@@ -208,7 +208,7 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <Video className="w-6 h-6 fill-current" />
+                    <VideoIcon className="w-6 h-6 fill-current" />
                     Join Now
                   </div>
                 )}
@@ -221,7 +221,7 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
     );
   }
 
-if (call) {
+  if (call) {
     return (
       <div className="h-dvh sm:mt-0 mt-22 w-full relative overflow-hidden flex flex-col">
         <div className="absolute top-4 left-4 md:bottom-6 md:left-6 md:top-auto z-50">
