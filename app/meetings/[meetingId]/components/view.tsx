@@ -1,5 +1,14 @@
 "use client";
 
+
+import {
+  CallControls,              // Pre-built bar with share/record/leave
+  CallParticipantsList,      // Sidebar for people
+  PaginatedGridLayout,       // Good alternative to SpeakerLayout
+  RecordCallButton,          // Specific button for recording
+  ScreenShareButton,         // Specific button for sharing
+} from "@stream-io/video-react-sdk";
+
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +35,8 @@ import {
   Lock,
   Timer,
   Phone,
+  MonitorUp,
+  Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -35,11 +46,11 @@ import MeetingNotFound from "@/components/sub-components/MeetingNotFound";
 const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
 
 const MeetingPage = () => {
-  const { meetingId } = useParams();
   const trpc = useTRPC();
-  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null);
+  const { meetingId } = useParams();
   const [call, setCall] = useState<any>(null);
   const { data: _session, isPending: sessionLoading } = authClient.useSession();
+  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null);
 
   const { data: meeting, isLoading: meetingLoading, error: meetingError } = useQuery(
     trpc.meetings.getOne.queryOptions({ id: meetingId as string }, { retry: false })
@@ -93,9 +104,27 @@ const MeetingPage = () => {
 };
 
 const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
-  const queryClient = useQueryClient();
+  const call = useCall();
   const trpc = useTRPC();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { useCallCreatedBy } = useCallStateHooks();
+  const callCreatedBy = useCallCreatedBy();
+  const { data: _session } = authClient.useSession();
+  const { useIsCallRecordingInProgress, useScreenShareState } = useCallStateHooks();
+  const { screenShare } = useScreenShareState();
+  const isRecording = useIsCallRecordingInProgress()
+  const [isJoining, setIsJoining] = useState(false);
+  const { useParticipantCount, useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
+  const callingState = useCallCallingState();
+  const participantCount = useParticipantCount();
+  const { camera, isEnabled: isCamEnabled } = useCameraState();
+  const { microphone, isMute: isMicMuted } = useMicrophoneState();
+  const isCamOff = !isCamEnabled;
+  const isScreenSharing = screenShare.enabled
+  const isOwner = _session?.user?.id === callCreatedBy?.id;
   const updateStatus = useMutation(trpc.meetings.update.mutationOptions());
+  const [isPending, setIsPending] = useState(false);
   const updateMeetingStatus = (newStatus: MeetingData["status"]) => {
     if (meeting.status === newStatus) return;
 
@@ -108,16 +137,6 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
       }
     });
   };
-
-  const [isJoining, setIsJoining] = useState(false);
-  const router = useRouter();
-  const { useParticipantCount, useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
-  const participantCount = useParticipantCount();
-  const callingState = useCallCallingState();
-  const call = useCall();
-  const { microphone, isMute: isMicMuted } = useMicrophoneState();
-  const { camera, isEnabled: isCamEnabled } = useCameraState();
-  const isCamOff = !isCamEnabled;
 
   useEffect(() => {
     if (!call) return;
@@ -151,6 +170,29 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
 
   const toggleMic = async () => {
     await call?.microphone.toggle();
+  };
+
+  const toggleRecording = async () => {
+    if (!call || !isOwner || isPending) return;
+
+    setIsPending(true);
+
+    try {
+      const recordingInProgress = call.state.recording;
+
+      if (recordingInProgress) {
+        await call.stopRecording();
+        toast.success("Recording stopped.");
+      } else {
+        await call.startRecording();
+        toast.info("Recording started...");
+      }
+    } catch (error: any) {
+      console.error("Recording error:", error);
+      toast.error(error.message || "Failed to toggle recording.");
+    } finally {
+      setTimeout(() => setIsPending(false), 2000);
+    }
   };
 
   const toggleCam = async () => {
@@ -282,7 +324,7 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
             {participantCount < 2 ? "Alone" : participantCount + " People"}
           </div>
         </div>
-        <div className="flex-1 w-full relative">
+        <div className="flex-1 w-full relative bg-black/10 mx-auto my-22 backdrop-blur-md">
           <SpeakerLayout participantsBarPosition="top" />
         </div>
         <div className="relative pb-safe mb-4 md:mb-0">
@@ -310,7 +352,35 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
               >
                 {isCamOff ? <VideoOff className="w-5 h-5 md:w-6 md:h-6" /> : <VideoIcon className="w-5 h-5 md:w-6 md:h-6" />}
               </Button>
+              {
+                isOwner &&
 
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={isPending}
+                  className={`rounded-full transition-all duration-300 ${isRecording
+                    ? "bg-red-500 text-white hover:bg-red-600 border-transparent shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                    : "bg-white/10 hover:bg-white/20 border-white/50"
+                    } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={toggleRecording}
+                >
+                  <Circle className={`w-5 h-5 text-red-600 border-0 outline-0 ring-0 ${isRecording ? "fill-white" : "fill-red-600"}`} />
+                </Button>
+
+              }
+              <Button
+                variant="outline"
+                size="icon"
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isScreenSharing
+                  ? "bg-blue-500/80 text-white hover:bg-blue-600"
+                  : "bg-white/10 text-white hover:bg-white hover:text-black"
+                  }`}
+                onClick={() => call?.screenShare.toggle()}
+              >
+                <MonitorUp className="w-5 h-5 md:w-6 md:h-6" />
+              </Button>
               <div className="w-px h-6 md:h-8 bg-white mx-1 md:mx-2" />
 
               <button
