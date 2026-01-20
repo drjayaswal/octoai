@@ -47,14 +47,13 @@ export const meetingRouter = createTRPCRouter({
   }),
   getOne: protectedProcedure
     .input(meetingIdSchema)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const [existingMeeting] = await db
         .select()
         .from(meeting)
         .where(
           and(
             eq(meeting.id, input.id),
-            eq(meeting.userId, ctx.auth.user.id)
           )
         );
 
