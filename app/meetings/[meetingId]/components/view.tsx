@@ -1,12 +1,11 @@
 "use client";
 
-
 import {
-  CallControls,              // Pre-built bar with share/record/leave
-  CallParticipantsList,      // Sidebar for people
-  PaginatedGridLayout,       // Good alternative to SpeakerLayout
-  RecordCallButton,          // Specific button for recording
-  ScreenShareButton,         // Specific button for sharing
+  CallControls, // Pre-built bar with share/record/leave
+  CallParticipantsList, // Sidebar for people
+  PaginatedGridLayout, // Good alternative to SpeakerLayout
+  RecordCallButton, // Specific button for recording
+  ScreenShareButton, // Specific button for sharing
 } from "@stream-io/video-react-sdk";
 
 import { useParams, useRouter } from "next/navigation";
@@ -37,6 +36,10 @@ import {
   Phone,
   MonitorUp,
   Circle,
+  Paperclip,
+  Copy,
+  CopyCheck,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -50,13 +53,23 @@ const MeetingPage = () => {
   const { meetingId } = useParams();
   const [call, setCall] = useState<any>(null);
   const { data: _session, isPending: sessionLoading } = authClient.useSession();
-  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null);
-
-  const { data: meeting, isLoading: meetingLoading, error: meetingError } = useQuery(
-    trpc.meetings.getOne.queryOptions({ id: meetingId as string }, { retry: false })
+  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(
+    null,
+  );
+  const {
+    data: meeting,
+    isLoading: meetingLoading,
+    error: meetingError,
+  } = useQuery(
+    trpc.meetings.getOne.queryOptions(
+      { id: meetingId as string },
+      { retry: false },
+    ),
   );
 
-  const generateToken = useMutation(trpc.meetings.generateToken.mutationOptions());
+  const generateToken = useMutation(
+    trpc.meetings.generateToken.mutationOptions(),
+  );
 
   useEffect(() => {
     if (!meeting || !_session?.user) return;
@@ -67,7 +80,10 @@ const MeetingPage = () => {
         const token = await generateToken.mutateAsync();
         client = new StreamVideoClient({
           apiKey,
-          user: { id: _session.user.id, name: _session.user.name ?? "Anonymous" },
+          user: {
+            id: _session.user.id,
+            name: _session.user.name ?? "Anonymous",
+          },
           token,
         });
         const callInstance = client.call("default", meeting.id);
@@ -80,7 +96,9 @@ const MeetingPage = () => {
     };
 
     initVideo();
-    return () => { if (client) client.disconnectUser(); };
+    return () => {
+      if (client) client.disconnectUser();
+    };
   }, [meeting?.id, _session?.user.id]);
 
   if (meetingLoading || sessionLoading || !videoClient || !call || !meeting) {
@@ -111,38 +129,54 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
   const { useCallCreatedBy } = useCallStateHooks();
   const callCreatedBy = useCallCreatedBy();
   const { data: _session } = authClient.useSession();
-  const { useIsCallRecordingInProgress, useScreenShareState } = useCallStateHooks();
+  const { useIsCallRecordingInProgress, useScreenShareState } =
+    useCallStateHooks();
   const { screenShare } = useScreenShareState();
-  const isRecording = useIsCallRecordingInProgress()
+  const isRecording = useIsCallRecordingInProgress();
   const [isJoining, setIsJoining] = useState(false);
-  const { useParticipantCount, useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
+  const {
+    useParticipantCount,
+    useCallCallingState,
+    useMicrophoneState,
+    useCameraState,
+  } = useCallStateHooks();
   const callingState = useCallCallingState();
   const participantCount = useParticipantCount();
   const { camera, isEnabled: isCamEnabled } = useCameraState();
   const { microphone, isMute: isMicMuted } = useMicrophoneState();
   const isCamOff = !isCamEnabled;
-  const isScreenSharing = screenShare.enabled
+  const isScreenSharing = screenShare.enabled;
   const isOwner = _session?.user?.id === callCreatedBy?.id;
   const updateStatus = useMutation(trpc.meetings.update.mutationOptions());
   const [isPending, setIsPending] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
   const updateMeetingStatus = (newStatus: MeetingData["status"]) => {
     if (meeting.status === newStatus) return;
 
-    updateStatus.mutate({
-      id: meeting.id,
-      status: newStatus,
-    }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries(trpc.meetings.getOne.queryOptions({ id: meeting.id }));
-      }
-    });
+    updateStatus.mutate(
+      {
+        id: meeting.id,
+        status: newStatus,
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries(
+            trpc.meetings.getOne.queryOptions({ id: meeting.id }),
+          );
+        },
+      },
+    );
   };
 
   useEffect(() => {
     if (!call) return;
 
     const syncStatus = async () => {
-      if (callingState === CallingState.JOINED && meeting.status === "upcoming") {
+      if (
+        callingState === CallingState.JOINED &&
+        meeting.status === "upcoming"
+      ) {
         updateMeetingStatus("active");
       }
       if (callingState === CallingState.LEFT) {
@@ -229,7 +263,7 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
   const handleLeave = async () => {
     await call?.leave();
     updateMeetingStatus("completed");
-    toast.success("Meeting Ended")
+    toast.success("Meeting Ended");
     router.push(`/meetings/${meeting.id}/review`);
   };
 
@@ -239,7 +273,6 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
         <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-15 lg:gap-0 items-center">
           <div className="order-1 space-y-6 min-w-fit max-w-2xl mx-auto">
             <div className="relative aspect-video rounded-[4rem] overflow-hidden shadow-2xl">
-
               {isCamOff ? (
                 <div className="w-full h-full flex items-center justify-center bg-white/10" />
               ) : (
@@ -257,7 +290,11 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
                   className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-colors ${isMicMuted ? "bg-amber-500/70 text-white hover:bg-amber-500" : "bg-white/10 hover:bg-white hover:text-black"}`}
                   onClick={toggleMic}
                 >
-                  {isMicMuted ? <MicOff className="w-6 h-6 md:w-8 md:h-8" /> : <Mic className="w-6 h-6 md:w-8 md:h-8" />}
+                  {isMicMuted ? (
+                    <MicOff className="w-6 h-6 md:w-8 md:h-8" />
+                  ) : (
+                    <Mic className="w-6 h-6 md:w-8 md:h-8" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -265,18 +302,62 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
                   className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-colors ${isCamOff ? "bg-green-500/70 text-white hover:bg-green-500" : "bg-white/10 hover:bg-white hover:text-black"}`}
                   onClick={toggleCam}
                 >
-                  {isCamOff ? <VideoOff className="w-6 h-6 md:w-8 md:h-8" /> : <VideoIcon className="w-6 h-6 md:w-8 md:h-8" />}
+                  {isCamOff ? (
+                    <VideoOff className="w-6 h-6 md:w-8 md:h-8" />
+                  ) : (
+                    <VideoIcon className="w-6 h-6 md:w-8 md:h-8" />
+                  )}
                 </Button>
               </div>
             </div>
             <p className="text-center text-xs md:text-sm text-white/40 italic">
               check your camera and microphone permissions
             </p>
+            <div className="flex gap-2 items-center">
+              <Button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2000);
+                  } catch (err) {
+                    console.error("Failed to copy!", err);
+                  }
+                }}
+                variant={"default"}
+                className="inline-flex items-center gap-2 rounded-full hover:bg-indigo-600 bg-indigo-600/80 hover:shadow-xl hover:scale-105 duration-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md transition-all"
+              >
+                {isCopied ? (
+                  <div className="flex items-center gap-2">
+                    <CopyCheck className="w-3 h-3" />
+                    <span>Copied!</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Copy className="w-3 h-3" />
+                    <span>Copy Link</span>
+                  </div>
+                )}
+              </Button>
+
+              <Button
+                onClick={() => toast.info("feature coming soon...")}
+                variant={"default"}
+                className="inline-flex items-center gap-2 rounded-full hover:bg-green-600 bg-green-600/80 hover:shadow-xl hover:scale-105 duration-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md transition-all"
+              >
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-3 h-3" />
+                    <span>Whatsapp</span>
+                  </div>
+              </Button>
+            </div>
           </div>
           <div className="order-2 space-y-6 md:space-y-8 text-center lg:text-left">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md">
-                Secured <Lock className="w-3 h-3" /> Encrypted
+              <div className="flex gap-2 items-center">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md">
+                  Secured <Lock className="w-3 h-3" /> Encrypted
+                </div>
               </div>
               <h1 className="text-3xl md:text-5xl lg:text-6xl font-black mb-3 tracking-tight leading-tight wrap-break-words">
                 {meeting.name}
@@ -304,7 +385,10 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
                   </div>
                 )}
               </Button>
-              <p className="text-xs text-white/50">{participantCount} others in this call</p>
+
+              <p className="text-xs text-white/50">
+                {participantCount} others in this call
+              </p>
             </div>
           </div>
         </div>
@@ -333,50 +417,60 @@ const MeetingView = ({ meeting }: { meeting: MeetingData }) => {
               <Button
                 variant="outline"
                 size="icon"
-                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isMicMuted
-                  ? "bg-amber-500/70 text-white hover:bg-amber-500"
-                  : "bg-white/10 text-white hover:bg-white hover:text-black"
-                  }`}
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${
+                  isMicMuted
+                    ? "bg-amber-500/70 text-white hover:bg-amber-500"
+                    : "bg-white/10 text-white hover:bg-white hover:text-black"
+                }`}
                 onClick={() => microphone.toggle()}
               >
-                {isMicMuted ? <MicOff className="w-5 h-5 md:w-6 md:h-6" /> : <Mic className="w-5 h-5 md:w-6 md:h-6" />}
+                {isMicMuted ? (
+                  <MicOff className="w-5 h-5 md:w-6 md:h-6" />
+                ) : (
+                  <Mic className="w-5 h-5 md:w-6 md:h-6" />
+                )}
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isCamOff
-                  ? "bg-green-500/70 text-white hover:bg-green-500"
-                  : "bg-white/10 text-white hover:bg-white hover:text-black"
-                  }`}
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${
+                  isCamOff
+                    ? "bg-green-500/70 text-white hover:bg-green-500"
+                    : "bg-white/10 text-white hover:bg-white hover:text-black"
+                }`}
                 onClick={() => camera.toggle()}
               >
-                {isCamOff ? <VideoOff className="w-5 h-5 md:w-6 md:h-6" /> : <VideoIcon className="w-5 h-5 md:w-6 md:h-6" />}
+                {isCamOff ? (
+                  <VideoOff className="w-5 h-5 md:w-6 md:h-6" />
+                ) : (
+                  <VideoIcon className="w-5 h-5 md:w-6 md:h-6" />
+                )}
               </Button>
-              {
-                isOwner &&
-
-
+              {isOwner && (
                 <Button
                   variant="outline"
                   size="icon"
                   disabled={isPending}
-                  className={`rounded-full transition-all duration-300 ${isRecording
-                    ? "bg-red-500 text-white hover:bg-red-600 border-transparent shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-                    : "bg-white/10 hover:bg-white/20 border-white/50"
-                    } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`rounded-full transition-all duration-300 ${
+                    isRecording
+                      ? "bg-red-500 text-white hover:bg-red-600 border-transparent shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                      : "bg-white/10 hover:bg-white/20 border-white/50"
+                  } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={toggleRecording}
                 >
-                  <Circle className={`w-5 h-5 text-red-600 border-0 outline-0 ring-0 ${isRecording ? "fill-white" : "fill-red-600"}`} />
+                  <Circle
+                    className={`w-5 h-5 text-red-600 border-0 outline-0 ring-0 ${isRecording ? "fill-white" : "fill-red-600"}`}
+                  />
                 </Button>
-
-              }
+              )}
               <Button
                 variant="outline"
                 size="icon"
-                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${isScreenSharing
-                  ? "bg-blue-500/80 text-white hover:bg-blue-600"
-                  : "bg-white/10 text-white hover:bg-white hover:text-black"
-                  }`}
+                className={`rounded-full scale-110 md:scale-130 border-0 backdrop-blur-md transition-all duration-300 ${
+                  isScreenSharing
+                    ? "bg-blue-500/80 text-white hover:bg-blue-600"
+                    : "bg-white/10 text-white hover:bg-white hover:text-black"
+                }`}
                 onClick={() => call?.screenShare.toggle()}
               >
                 <MonitorUp className="w-5 h-5 md:w-6 md:h-6" />
